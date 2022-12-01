@@ -9,8 +9,10 @@ database and generate the CSV files:
 
 The following arguments are possible:
 
-- `-i <path>` to override the input file
-- `-o <path>` to override the output file
+- `-i <path>` to override the input file (still requires to specify the
+  input file as the first argument, which will then be ignored)
+- `-o <path>` to override the output file (still requires to specify the
+  output file as the second argument, which will then be ignored)
 - `-bin <true|default=false>` to override whether bin features should be
   extracted
 - `-sleep <true|default=false>` to override whether raw sleep features
