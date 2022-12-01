@@ -15,8 +15,8 @@ class Epoch:
 
 chunk_size = 1617 # 1 state byte + 401 DC-component of the EEG + EEG variability, the EMG variability and the temperature of the mouse
 
-output_file = 'BDF06.csv'
-input_file = 'BDF06.smo'
+output_file = '../data/10101.csv'
+input_file = '../data/10101.smo'
 
 with open(output_file, 'w', newline='') as csvfile:
 	thewriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
