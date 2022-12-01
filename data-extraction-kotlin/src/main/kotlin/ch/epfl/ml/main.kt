@@ -17,7 +17,7 @@ import kotlin.system.exitProcess
  * A single value in the input stream.
  *
  * @param rawState the raw sleep phase.
- * @param state the sleep phase.
+ * @property state the sleep phase.
  * @param bin the DC components of the EEG.
  * @param EEGv the EEG variability.
  * @param EMGv the EMG variability.
