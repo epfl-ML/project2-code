@@ -5,6 +5,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 /**
  * A single value in the input stream.
@@ -27,7 +28,7 @@ class Epoch(
 
     /** Reads the next epoch from the input stream. */
     fun from(bytes: InputStream): Epoch {
-      val state = bytes.requireByte().toChar()
+      val state = bytes.requireByte().toInt().toChar()
       val bin = FloatArray(401)
       for (i in bin.indices) {
         bin[i] = bytes.readFloat()
@@ -41,15 +42,9 @@ class Epoch(
     /** Maps the sleep [phase] to well-known values. */
     private fun mapPhase(phase: Char): Char {
       return when (phase) {
-        'w',
-        '1',
-        '4' -> 'w'
-        'n',
-        '2',
-        '5' -> 'n'
-        'r',
-        '3',
-        '6' -> 'r'
+        'w', '1', '4' -> 'w'
+        'n', '2', '5' -> 'n'
+        'r', '3', '6' -> 'r'
         else -> throw IllegalArgumentException("Unknown phase $phase.")
       }
     }
@@ -67,7 +62,7 @@ fun InputStream.requireByte(): Byte {
 /** Returns the next four bytes of this stream as a float. */
 fun InputStream.readFloat(): Float {
   val bytes = ByteArray(4) { requireByte() }
-  val buffer = ByteBuffer.wrap(bytes)
+  val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
   return buffer.getFloat(0)
 }
 
@@ -84,7 +79,7 @@ fun main(args: Array<String>) {
 
   val stream = FileInputStream(args[0]).buffered()
   val out = FileOutputStream(args[1]).bufferedWriter()
-  out.write("state,bin,EEGv,EMGv,temp\n")
+  out.write("state,EEGv,EMGv,temp\n")
   var count = 0
   while (true) {
     count++
@@ -94,6 +89,7 @@ fun main(args: Array<String>) {
     try {
       val epoch = Epoch.from(stream)
       out.write("${epoch.state},${epoch.EEGv},${epoch.EMGv},${epoch.temp}\n")
+      out.flush()
     } catch (e: IllegalArgumentException) {
       break
     }
