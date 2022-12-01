@@ -4,7 +4,7 @@ import csv
 
 class Epoch:
 	def __init__(self, bytes):
-		state = chr(bytes[0]
+		state = chr(bytes[0])
 		EEGv = struct.unpack('f', bytes[-12:-8])[0]
 		EMGv = struct.unpack('f', bytes[-8:-4])[0]
 		temp = struct.unpack('f', chunk[-4:])[0]
