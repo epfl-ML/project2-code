@@ -14,11 +14,11 @@ class Epoch:
 		thewriter.writerow([self.state, self.EEGv, self.EMGv, self.temp])
 
 	def state_maping(self, state):
-		if state == 'w' or '1' or '4':
+		if state == 'w' or state == '1' or state == '4':
 			return 3
-		if state == 'n' or '2' or '5':
+		if state == 'n' or state == '2' or state == '5':
 			return 2
-		if state == 'r' or '3' or '6':
+		if state == 'r' or state == '3' or state == '6':
 			return 1
 		else: 
 			return 0
