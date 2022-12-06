@@ -44,6 +44,23 @@ def standardize(df, ignored=[]):
             df[col] = (df[col] - df[col].mean()) / df[col].std()
 
     return df
+
+
+def log_features(df, ignored=[]):
+    """
+    Take the log of the features.
+    Args:
+        df: the dataframe to transform
+
+    Returns:
+        df: the transformed dataframe
+    """
+    print("hello world")
+    df = df.copy()
+    for col in df.columns:
+        if col not in ignored:
+            df[col] = np.log(df[col])
+    return df
   
 
 def expand_features_poly(df, max_degree, ignored=None):
@@ -122,6 +139,7 @@ def clean_data(df_raw, max_invalid_ratio, degree, expand_trig):
     df = df_raw.copy()
 
     df = drop_invalid_features(df, max_invalid_ratio)
+    df = log_features(df, ignored=["state", "bias"])
     df = standardize(df, ignored=["state", "bias"])
     df = expand_features_poly(
         df, degree, ignored=["state", "bias"],
