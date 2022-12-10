@@ -27,8 +27,8 @@ chunk_size = 1617 # 1 state byte + 401 DC-component of the EEG + EEG variability
 
 dirname = os.path.dirname(__file__)
 
-output_file = '../data/10101.csv'
-input_file = '../data/10101.smo'
+output_file = '../data/10306.csv'
+input_file = '../data/10306.smo'
 
 with open(os.path.join(dirname, output_file), 'w', newline='') as csvfile:
 	thewriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
