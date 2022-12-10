@@ -1,11 +1,12 @@
 import enum
-import pandas as pd
 import typing
-from sklearn.preprocessing import LabelEncoder
+
+import pandas as pd
 import tensorflow as tf
 
-
-
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 def load_features(file: str) -> pd.DataFrame:
     """
@@ -108,3 +109,16 @@ def split_labels(df, useRaw=False):
     y = df1[skeep]
 
     return (x, y)
+
+def split_data(df, useRaw, test_size, seed, cat_matrix):
+    x, y_raw = split_labels(df, useRaw=useRaw)
+    y, le = encode_labels(y_raw, cat_matrix=cat_matrix)
+
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size, random_state=seed)
+
+    # Scale on train, or whole data?
+    scaler = StandardScaler().fit(x_train)
+    x_train = scaler.transform(x_train)
+    x_test = scaler.transform(x_test)
+
+    return x_train, x_test, y_train, y_test, le
