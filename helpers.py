@@ -31,7 +31,7 @@ def drop_invalid_features(df, max_invalid_ratio):
             df.drop(col, axis=1, inplace=True)
     return df
 
-def standardize(df, ignored=[]): 
+def standardize(df, features=[]): 
     """
         Normalize the data using the mean and standard deviation of the training data
         Args:
@@ -40,13 +40,13 @@ def standardize(df, ignored=[]):
             df: the normalized data
     """
     for col in df.columns:
-        if col not in ignored:
+        if col in features:
             df[col] = (df[col] - df[col].mean()) / df[col].std()
 
     return df
 
 
-def log_features(df, ignored=[]):
+def log_features(df, features=[]):
     """
     Take the log of the features.
     Args:
@@ -55,15 +55,14 @@ def log_features(df, ignored=[]):
     Returns:
         df: the transformed dataframe
     """
-    print("hello world")
     df = df.copy()
     for col in df.columns:
-        if col not in ignored:
+        if col in features:
             df[col] = np.log(df[col])
     return df
   
 
-def expand_features_poly(df, max_degree, ignored=None):
+def expand_features_poly(df, max_degree, features=None):
         """
         Expand the dataframe by adding polynomial features.
 
@@ -74,11 +73,11 @@ def expand_features_poly(df, max_degree, ignored=None):
         Returns:
             df: the expanded dataframe
         """
-        if ignored is None:
-            ignored = ["state", 'bias']
+        if features is None:
+            features = ['EEGv', 'EMGv']
         df = df.copy()
         for feature in df.columns:
-            if feature in ignored:
+            if feature not in features:
                 continue
             for degree in range(2, max_degree + 1):
                 df[f"{feature}^{degree}"] = df[feature] ** degree
@@ -123,12 +122,11 @@ def expand_features_trigonometric(df, columns=None):
     return df
 
 
-def clean_data(df_raw, max_invalid_ratio, degree, expand_trig):
+def clean_data(df_raw, features, degree, expand_trig):
     """
     Clean the data, removing invalid columns and changing invalid values remaining.
     Args:
         df: dataframe to clean
-        max_invalid_ratio: maximum ratio of invalid values in a feature
         degree: degree of the polynomial expansion
         expand_trig: whether to expand the trigonometric features or not
         ignored: list of features to ignore
@@ -138,11 +136,10 @@ def clean_data(df_raw, max_invalid_ratio, degree, expand_trig):
     """
     df = df_raw.copy()
 
-    df = drop_invalid_features(df, max_invalid_ratio)
-    df = log_features(df, ignored=["state", "bias"])
-    df = standardize(df, ignored=["state", "bias"])
+    df = log_features(df, features=features)
+    df = standardize(df, features=features)
     df = expand_features_poly(
-        df, degree, ignored=["state", "bias"],
+        df, degree, features=features,
     )
 
     if expand_trig:
