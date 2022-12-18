@@ -27,7 +27,6 @@ class WindowOperationFlag(enum.IntFlag):
     """
     MEAN = enum.auto()
     MEDIAN = enum.auto()
-    MODE = enum.auto()
     VAR = enum.auto()
 
 
@@ -51,7 +50,7 @@ def features_window(
         data: numpy array of shape (N, D).
     """
     if op == 0:
-        op = WindowOperationFlag.MEAN | WindowOperationFlag.MEDIAN | WindowOperationFlag.MODE | WindowOperationFlag.VAR
+        op = WindowOperationFlag.MEAN | WindowOperationFlag.MEDIAN | WindowOperationFlag.VAR
     if features is None:
         features = list(df.columns)
 
@@ -80,20 +79,49 @@ def log_features(df, features=[]):
             df[f"{col}_log"] = np.log(df[col])
     return df
 
-def add_times(df) -> pd.DataFrame:
+def expand_features_poly(df, max_degree, features=None):
     """
-    Add times to the dataframe.
+    Expand the dataframe by adding polynomial features.
+
     Args:
-        df: numpy array of shape (N, D).
+        degree: maximum degree of the polynomial
+        ignored: features to ignore
+
     Returns:
-        data: numpy array of shape (N, D+2).
+        df: the expanded dataframe
     """
+    if features is None:
+        features = ['EEGv', 'EMGv']
+    df = df.copy()
+    for feature in df.columns:
+        if feature not in features:
+            continue
+        for degree in range(2, max_degree + 1):
+            df[f"{feature}^{degree}"] = df[feature] ** degree
+    # add bias
+    df["bias"] = 1
+    return df
+
+def filter_days(df, days):
     df1 = df.copy()
-    df1["time"] = df1.index
-    df1["day"] = df1["time"] // 21600
-    return df1
+    df1["day"] = df1.index // 21600
+    return df[df1["day"].isin(days)]
 
+def states(rawState):
+    if rawState:
+        return 'rawState', 'state'
+    return 'state', 'rawState'
 
+def split_labels(df, useRaw=False):
+    skeep, sdrop = states(useRaw)
+
+    df1 = df.copy()
+
+    x = df1.drop([skeep], axis=1)
+    y = df1[skeep]
+
+    return (x, y)
+    
 def encode_labels(y, cat_matrix=False):
     le = LabelEncoder()
     le.fit(y)
@@ -105,34 +133,97 @@ def encode_labels(y, cat_matrix=False):
 def decode_labels(le, y):
     return le.inverse_transform(y)
 
-def filter_days(df, days):
-    return df[df["day"].isin(days)]
+def standardize(df, features=[]): 
+    """
+        Normalize the data using the mean and standard deviation of the training data
+        Args:
+            X: the data to normalize
+        Returns:
+            df: the normalized data (dataframe)
+    """
+    for col in df.columns:
+        if col in features:
+            df[col] = (df[col] - df[col].mean()) / df[col].std()
 
-def states(rawState):
-    if rawState:
-        return 'rawState', 'state'
-    return 'state', 'rawState'
+    return df
 
-def split_labels(df, useRaw=False):
-    skeep, sdrop = states(useRaw)
-
-    df1 = df.copy()
-    df1 = df1.drop([sdrop, "temp", "time", "day"], axis=1)
-
-    x = df1.drop([skeep], axis=1)
-    y = df1[skeep]
-
-    return (x, y)
-
-def split_data(df, useRaw, test_size, seed, cat_matrix):
+def split_encode_scale_data(df, useRaw, test_size, seed, cat_matrix):
+    """
+    Good for using same mice for train and test
+    """
     x, y_raw = split_labels(df, useRaw=useRaw)
     y, le = encode_labels(y_raw, cat_matrix=cat_matrix)
 
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size, random_state=seed)
 
-    # Scale on train, or whole data?
     scaler = StandardScaler().fit(x_train)
     x_train = scaler.transform(x_train)
     x_test = scaler.transform(x_test)
 
     return x_train, x_test, y_train, y_test, le
+
+def encode_scale_data(df_train, df_test, useRaw, seed, cat_matrix):
+    """
+    Good for using different mice for train and test
+    """
+    x_train, y_train_raw = split_labels(df_train, useRaw=useRaw)
+    y_train, le = encode_labels(y_train_raw, cat_matrix=cat_matrix)
+
+    x_test, y_test_raw = split_labels(df_test, useRaw=useRaw)
+    y_test = le.transform(y_test_raw)
+
+    scaler = StandardScaler().fit(x_train)
+    x_train = scaler.transform(x_train)
+    x_test = scaler.transform(x_test)
+
+    return x_train, x_test, y_train, y_test, le
+
+def clean_data(data_folder, data_files, days, window_sizes, window_features, dropBins, useRaw, standardize_df, standardize_features=[]):
+    df = pd.DataFrame()
+    # iterate over several files
+    for file in data_files:
+        df_temp = load_features(data_folder + file)
+
+        # filter days
+        df_temp = filter_days(df_temp, days)
+
+        # compute bins features
+        # drop raw bins
+        if dropBins:
+            for i in range(401):
+                df_temp = df_temp.drop([f"bin{i}"], axis=1)
+
+        # add feature window
+        window_names = []
+        for window_size in window_sizes:
+            df_temp = features_window(df_temp, window_size=window_size, op=WindowOperationFlag.MEAN, features=window_features)
+            df_temp = features_window(df_temp, window_size=window_size, op=WindowOperationFlag.VAR, features=window_features)
+
+            for feature in window_features:
+                window_names.append(feature + "_mean" + str(window_size))
+                window_names.append(feature + "_var" + str(window_size))
+        # drop nan from feature window
+        df_temp = df_temp.dropna()
+
+        # add logs features
+        df_temp = log_features(df_temp, ["EEGv", "EMGv"] + window_names)
+        
+        # add polynomial expansion
+        # add trigonometric expansion ?
+
+        df = pd.concat([df, df_temp])
+
+    # standardize
+    if standardize_df:
+        df = standardize(df, features=features)
+
+    # balance classes
+    skeep, sdrop = states(useRaw)
+    balance = df[skeep].value_counts().min()
+    print(f"Balancing classes to {balance} samples per class (total: {balance * len(df[skeep].unique())})")
+    df = df.groupby(skeep).apply(lambda x: x.sample(balance)).reset_index(drop=True)
+
+    # drop unwanted features
+    df = df.drop([sdrop, "temp"], axis=1)
+
+    return df

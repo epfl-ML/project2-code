@@ -1,155 +1,5 @@
-import numpy as np
-import functions_ml as impl
-import pandas as pd
-from sklearn.linear_model import RidgeClassifier
-from sklearn.model_selection import cross_validate, StratifiedKFold, cross_val_score
+from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.metrics import make_scorer, accuracy_score, classification_report
-
-def split_label_features(df):
-    """
-    Split a dataframe into features and labels.
-    Args:
-        df: dataframe to split
-
-    Returns:
-        a tuple containing the features and labels.
-    """
-    return df["state"], df.drop("state", axis=1)
-
-
-
-def drop_invalid_features(df, max_invalid_ratio):
-    """
-    Remove all the columns with more than 50% of the data missing or zero.
-    Args:
-        df: the dataframe to clean
-
-    Returns:
-        df: the cleaned dataframe
-    """
-    df = df.copy()
-    for col in df.columns:
-        if not df[col].any():
-            df.drop(col, axis=1, inplace=True)
-    return df
-
-def standardize(df, features=[]): 
-    """
-        Normalize the data using the mean and standard deviation of the training data
-        Args:
-            X: the data to normalize
-        Returns:
-            df: the normalized data
-    """
-    for col in df.columns:
-        if col in features:
-            df[col] = (df[col] - df[col].mean()) / df[col].std()
-
-    return df
-
-
-def log_features(df, features=[]):
-    """
-    Take the log of the features.
-    Args:
-        df: the dataframe to transform
-
-    Returns:
-        df: the transformed dataframe
-    """
-    df = df.copy()
-    for col in df.columns:
-        if col in features:
-            df[col] = np.log(df[col])
-    return df
-  
-
-def expand_features_poly(df, max_degree, features=None):
-        """
-        Expand the dataframe by adding polynomial features.
-
-        Args:
-            degree: maximum degree of the polynomial
-            ignored: features to ignore
-
-        Returns:
-            df: the expanded dataframe
-        """
-        if features is None:
-            features = ['EEGv', 'EMGv']
-        df = df.copy()
-        for feature in df.columns:
-            if feature not in features:
-                continue
-            for degree in range(2, max_degree + 1):
-                df[f"{feature}^{degree}"] = df[feature] ** degree
-        # add bias
-        df["bias"] = 1
-        return df
-
-def expand_features_trigonometric(df, columns=None):
-    """
-    Expand the features of a dataframe by adding trigonometric features. The original features are kept with the same
-    name, and the new features are named as "feature_name_sin" and "feature_name_cos".
-    Args:
-        df: dataframe to expand
-        columns: list of columns to expand
-
-    Returns:
-        the expanded dataframe
-    """
-    pi_upper_bound = 3.2  # Handles bad rounding in the data sets
-
-    df = df.copy()
-    for feature in df.columns:
-        if feature not in columns:
-            continue
-        # Compute the sine and cosine of the feature, but only if the feature value is in the range [-pi, pi]. Values
-        # outside this range are set to -999.
-        df[f"{feature}_sin"] = np.where(
-            np.logical_and(
-                df[feature] >= -pi_upper_bound, df[feature] <= pi_upper_bound
-            ),
-            np.sin(df[feature]),
-            -999,
-        )
-        df[f"{feature}_cos"] = np.where(
-            np.logical_and(
-                df[feature] >= -pi_upper_bound, df[feature] <= pi_upper_bound
-            ),
-            np.cos(df[feature]),
-            -999,
-        )
-
-    return df
-
-
-def clean_data(df, degree, expand_trig, max_invalid_ratio, features=['EEGv', 'EMGv']):
-    """
-    Clean the data, removing invalid columns and changing invalid values remaining.
-    Args:
-        df: dataframe to clean
-        degree: degree of the polynomial expansion
-        expand_trig: whether to expand the trigonometric features or not
-        ignored: list of features to ignore
-        max_invalid_ratio: maximum ratio of invalid values in a column
-        features: list of features to expand
-    Returns:
-        the cleaned dataframe
-    """
-    df = df.copy()
-
-    df = drop_invalid_features(df, max_invalid_ratio)
-    df = log_features(df, features=features)
-    df = standardize(df, features=features)
-    df = expand_features_poly(
-        df, degree, features=features,
-    )
-
-    if expand_trig:
-        df = expand_features_trigonometric(df, columns=['EEGv', 'EMGv'])
-
-    return df
 
 def k_fold_cross_validation(X, y, model, k, seed):
     """
@@ -176,3 +26,386 @@ def k_fold_cross_validation(X, y, model, k, seed):
 
     nested_score = cross_val_score(model, X=X, y=y, cv=cv, scoring=make_scorer(classification_report_with_accuracy_score))
     return classification_report(originalclass, predictedclass)
+
+mice_breeds = {
+    "c57bl6" : [
+    "BL601",
+    "BL602",
+    "BL606",
+    "BL609",
+    "BL610",
+    "BL611",
+    "BL612",
+    "BL614",
+    "BL616",
+    "BL6V1",
+    "BL6V2",
+    "BL6V3",
+    ],
+
+    "dba2" : [
+    "1D203",
+    "1D204",
+    "1D206",
+    "2D203",
+    "DBA10",
+    "DBA11",
+    "DBA12",
+    "DBA13",
+    "DBA14",
+    "DBA15",
+    ],
+
+    "bxd_f1" : [
+    "BDF02",
+    "BDF04",
+    "BDF06",
+    "BDF08",
+    "BDF09",
+    ],
+
+    "dxb_f1" : [
+    "DBF01",
+    "DBF02",
+    "DBF04",
+    "DBF05",
+    "DBF06",
+    "DBF07",
+    "DBFM3",
+    ],
+
+    "bxd_005" : [
+    "00501",
+    "00502",
+    "00503",
+    "00504",
+    "00505",
+    "00506",
+    ],
+
+    "bxd_029" : [
+    "02901",
+    "02902",
+    "02903",
+    "02905",
+    "02907",
+    "02908",
+    "02909",
+    "02910",
+    ],
+
+    "bxd_029_tlr4" : [
+    "29T01",
+    "29T05",
+    "29T06",
+    "29T08",
+    "29T09",
+    "29T10",
+    "29T11",
+    ],
+
+    "bxd_032" : [
+    "03201",
+    "03202",
+    "03204",
+    "03205",
+    "03206",
+    "03207",
+    "03208",
+    ],
+
+    "bxd_043" : [
+    "04304",
+    "04306",
+    "04307",
+    "04308",
+    "04309",
+    "04310",
+    "043S5",
+    ],
+
+    "bxd_044" : [
+    "04402",
+    "04403",
+    "04405",
+    "04406",
+    "04407",
+    ],
+
+    "bxd_045" : [
+    "04501",
+    "04502",
+    "04504",
+    "04505",
+    "04506",
+    "04508",
+    ],
+
+    "bxd_048" : [
+    "04801",
+    "04802",
+    "04803",
+    "04804",
+    "04805",
+    "04806",
+    ],
+
+    "bxd_049" : [
+    "04901",
+    "04902",
+    "04903",
+    "04905",
+    "04906",
+    "04907",
+    ],
+
+    "bxd_050" : [
+    "05001",
+    "05002",
+    "05003",
+    "05004",
+    ],
+
+    "bxd_051" : [
+    "05101",
+    "05102",
+    "05103",
+    "05107",
+    "05108",
+    "051G9",
+    "51G10",
+    ],
+
+    "bxd_055" : [
+    "05501",
+    "05502",
+    "05504",
+    "05505",
+    "05506",
+    ],
+
+    "bxd_056" : [
+    "05601",
+    "05602",
+    "05603",
+    "05604",
+    "05605",
+    "05606",
+    "05607",
+    ],
+
+    "bxd_061" : [
+    "06103",
+    "06105",
+    "06106",
+    "06109",
+    "06110",
+    "06111",
+    ],
+
+    "bxd_063" : [
+    "06302",
+    "06303",
+    "06304",
+    "06306",
+    "06307",
+    "06308",
+    ],
+
+    "bxd_064" : [
+    "06403",
+    "06404",
+    "06405",
+    "06407",
+    "06408",
+    "06410",
+    ],
+
+    "bxd_065" : [
+    "06501",
+    "06503",
+    "06504",
+    "06505",
+    "06506",
+    "06507",
+    ],
+
+    "bxd_066" : [
+    "06601",
+    "06603",
+    "06604",
+    "06605",
+    "06607",
+    "06608",
+    ],
+
+    "bxd_067" : [
+    "06702",
+    "06703",
+    "06704",
+    "06705",
+    "06706",
+    "06707",
+    ],
+
+    "bxd_070" : [
+    "07001",
+    "07004",
+    "07005",
+    "07006",
+    "07007",
+    ],
+
+    "bxd_071" : [
+    "07105",
+    "07106",
+    "07108",
+    "07109",
+    "071S2",
+    ],
+
+    "bxd_073" : [
+    "07301",
+    "07302",
+    "07303",
+    "07304",
+    "07305",
+    "07306",
+    ],
+
+    "bxd_075" : [
+    "07501",
+    "07502",
+    "07503",
+    "07504",
+    "07505",
+    "07507",
+    "075G8",
+    ],
+
+    "bxd_079" : [
+    "07901",
+    "07902",
+    ],
+
+    "bxd_081" : [
+    "08102",
+    "08103",
+    "08106",
+    "08108",
+    "08112",
+    "08113",
+    ],
+
+    "bxd_083" : [
+    "08305",
+    "08306",
+    "08311",
+    "08312",
+    "08313",
+    "08314",
+    ],
+
+    "bxd_084" : [
+    "08401",
+    "08403",
+    "08404",
+    "08405",
+    "08406",
+    ],
+
+    "bxd_085" : [
+    "08501",
+    "08502",
+    "08503",
+    ],
+
+    "bxd_087" : [
+    "08701",
+    "08705",
+    "08706",
+    "08707",
+    "08709",
+    "08710",
+    ],
+
+    "bxd_089" : [
+    "08901",
+    "08902",
+    "08903",
+    "08904",
+    "08910",
+    "08911",
+    ],
+
+    "bxd_090" : [
+    "09001",
+    "09003",
+    "09004",
+    "09005",
+    "09006",
+    "09007",
+    ],
+
+    "bxd_095" : [
+    "09501",
+    "09503",
+    "09504",
+    "09505",
+    "09506",
+    "09508",
+    "09509",
+    ],
+
+    "bxd_096" : [
+    "09601",
+    "09602",
+    "09604",
+    "09605",
+    "09606",
+    "09607",
+    "09608",
+    ],
+
+    "bxd_097" : [
+    "09701",
+    "09702",
+    "09703",
+    "09706",
+    "09708",
+    "09709",
+    ],
+
+    "bxd_098" : [
+    "09801",
+    "09802",
+    "09803",
+    "09806",
+    "09807",
+    "09808",
+    ],
+
+    "bxd_100" :[
+    "10002",
+    "10003",
+    "10004",
+    "10006",
+    "10008",
+    "10009",
+    "10010",
+    ],
+
+    "bxd_101" :[
+    "10101",
+    "10102",
+    ],
+
+    "bxd_103" : [
+    "10301",
+    "10302",
+    "10303",
+    "10304",
+    "10306",
+    "10307",
+    ],
+}
