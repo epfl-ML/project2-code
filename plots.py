@@ -6,14 +6,22 @@ import seaborn as sns
 
 from sklearn.metrics import classification_report, confusion_matrix
 
-def plot_loss(history):
-    fig, ax = plt.subplots(1, 1)    
-    ax.plot(history['loss'])
-    ax.plot(history['val_loss'])
-    ax.set_title('Model loss')
-    ax.set_xlabel('Epoch')
-    ax.set_ylabel('Loss')
-    ax.legend(['train', 'test'], loc='upper right')
+def plot_history(history):
+    fig, axs = plt.subplots(1, 2, figsize=(15, 5))
+    axs[0].plot(history['loss'])
+    axs[0].plot(history['val_loss'])
+    axs[0].set_title('Model loss')
+    axs[0].set_xlabel('Epoch')
+    axs[0].set_ylabel('Loss')
+    axs[0].set_yscale('log')
+    axs[0].legend(['train', 'test'], loc='upper right')
+
+    axs[1].plot(history['accuracy'])
+    axs[1].plot(history['val_accuracy'])
+    axs[1].set_title('Model accuracy')
+    axs[1].set_xlabel('Epoch')
+    axs[1].set_ylabel('Accuracy')
+    axs[1].legend(['train', 'test'], loc='upper left')
 
 def plot_df(data, day, log=False, state="state"):
     df = data[data["day"] == day]
@@ -66,3 +74,14 @@ def plot_confusion(model, x_test, y_test, le, cat_matrix, normalize='true'):
     sns.heatmap(confusion, annot=True, cmap="Blues", fmt='.2f')
     plt.title(f'Confusion matrix (normalize = {normalize}')
     plt.show()
+
+def confusion(model, x_test, y_test, le, cat_matrix, normalize='true'):
+    y_pred = model.predict(x_test)
+
+    if cat_matrix:
+        y_pred = np.argmax(y_pred, axis=1)
+        y_test = np.argmax(y_test, axis=1)
+
+    cm = np.array(confusion_matrix(y_test, y_pred))
+
+    return cm

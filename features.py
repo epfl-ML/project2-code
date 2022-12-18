@@ -73,11 +73,10 @@ def log_features(df, features=[]):
     Returns:
         df: the transformed dataframe
     """
-    df = df.copy()
-    for col in df.columns:
-        if col in features:
-            df[f"{col}_log"] = np.log(df[col])
-    return df
+    df1 = df.copy()
+    for feature in features:
+        df1[f"{feature}_log"] = np.log(df1[feature])
+    return df1
 
 def expand_features_poly(df, max_degree, features=None):
     """
@@ -162,6 +161,18 @@ def split_encode_scale_data(df, useRaw, test_size, seed, cat_matrix):
 
     return x_train, x_test, y_train, y_test, le
 
+def split_encode_scale_data_kfold(df, useRaw, seed, cat_matrix):
+    """
+    Good for using same mice for kfold
+    """
+    x, y_raw = split_labels(df, useRaw=useRaw)
+    y, le = encode_labels(y_raw, cat_matrix=cat_matrix)
+
+    scaler = StandardScaler().fit(x)
+    x = scaler.transform(x)
+
+    return x, y, le
+
 def encode_scale_data(df_train, df_test, useRaw, seed, cat_matrix):
     """
     Good for using different mice for train and test
@@ -171,6 +182,8 @@ def encode_scale_data(df_train, df_test, useRaw, seed, cat_matrix):
 
     x_test, y_test_raw = split_labels(df_test, useRaw=useRaw)
     y_test = le.transform(y_test_raw)
+    if cat_matrix:
+        y_test = tf.keras.utils.to_categorical(y_test)
 
     scaler = StandardScaler().fit(x_train)
     x_train = scaler.transform(x_train)
@@ -178,7 +191,7 @@ def encode_scale_data(df_train, df_test, useRaw, seed, cat_matrix):
 
     return x_train, x_test, y_train, y_test, le
 
-def clean_data(data_folder, data_files, days, window_sizes, window_features, dropBins, useRaw, standardize_df, standardize_features=[]):
+def clean_data(data_folder, data_files, days, window_sizes, window_features, dropBins, useRaw, balance=True, standardize_df=False, standardize_features=[]):
     df = pd.DataFrame()
     # iterate over several files
     for file in data_files:
@@ -194,7 +207,7 @@ def clean_data(data_folder, data_files, days, window_sizes, window_features, dro
                 df_temp = df_temp.drop([f"bin{i}"], axis=1)
 
         # add feature window
-        window_names = []
+        window_names = ["EEGv", "EMGv"]
         for window_size in window_sizes:
             df_temp = features_window(df_temp, window_size=window_size, op=WindowOperationFlag.MEAN, features=window_features)
             df_temp = features_window(df_temp, window_size=window_size, op=WindowOperationFlag.VAR, features=window_features)
@@ -206,7 +219,14 @@ def clean_data(data_folder, data_files, days, window_sizes, window_features, dro
         df_temp = df_temp.dropna()
 
         # add logs features
-        df_temp = log_features(df_temp, ["EEGv", "EMGv"] + window_names)
+        # drop zeroes for EEGv and EMGv
+        size_before = df_temp.shape[0]
+        for feature in window_names:
+            df_temp = df_temp[df_temp[feature] > 0]
+        size_after = df_temp.shape[0]
+        if size_before != size_after:
+            print(f"Removed {size_before - size_after} rows with invalid log values in {file}")
+        df_temp = log_features(df_temp, window_names)
         
         # add polynomial expansion
         # add trigonometric expansion ?
@@ -219,11 +239,11 @@ def clean_data(data_folder, data_files, days, window_sizes, window_features, dro
 
     # balance classes
     skeep, sdrop = states(useRaw)
-    balance = df[skeep].value_counts().min()
-    print(f"Balancing classes to {balance} samples per class (total: {balance * len(df[skeep].unique())})")
-    df = df.groupby(skeep).apply(lambda x: x.sample(balance)).reset_index(drop=True)
+    if balance:
+        balance = df[skeep].value_counts().min()
+        print(f"Balancing classes to {balance} samples per class (total: {balance * len(df[skeep].unique())})")
+        df = df.groupby(skeep).apply(lambda x: x.sample(balance)).reset_index(drop=True)
 
     # drop unwanted features
     df = df.drop([sdrop, "temp"], axis=1)
-
     return df
