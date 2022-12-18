@@ -130,7 +130,7 @@ def clean_data(df_raw, features, degree, expand_trig, max_invalid_ratio):
         degree: degree of the polynomial expansion
         expand_trig: whether to expand the trigonometric features or not
         ignored: list of features to ignore
-
+        max_invalid_ratio: maximum ratio of invalid values in a column
     Returns:
         the cleaned dataframe
     """
