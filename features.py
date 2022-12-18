@@ -40,6 +40,7 @@ def features_window(
         window_size: int,
         op: WindowOperationFlag = 0,
         features: typing.Union[list[str], None] = None,
+        center=False,
 ) -> pd.DataFrame:
     """
     Smooth features by performing a set of operations over a window of size `window_size`. The implementations must
@@ -49,6 +50,7 @@ def features_window(
         window_size: size of the window.
         op: the operation(s) to perform on the window.
         features: the list of features
+        center: whether the window is centered or not.
     Returns:
         data: numpy array of shape (N, D).
     """
@@ -59,15 +61,11 @@ def features_window(
 
     # For each operation, add the computed aggregated value.
     if WindowOperationFlag.MEAN & op == WindowOperationFlag.MEAN:
-        df[[f + f"_mean{window_size}" for f in features]] = df[features].rolling(window_size).mean()
+        df[[f + f"_mean{window_size}" for f in features]] = df[features].rolling(window_size, center=center).mean()
     if WindowOperationFlag.MEDIAN & op == WindowOperationFlag.MEDIAN:
-        df[[f + f"_median{window_size}" for f in features]] = df[features].rolling(window_size).median()
-    if WindowOperationFlag.MODE & op == WindowOperationFlag.MODE:
-        # TODO : This is particularly slow, since it requires to iterate over the whole window for each step.
-        #        Moreover, it may not be particularly relevant for real-valued features. Should we remove it ?
-        df[[f + f"_mode{window_size}" for f in features]] = df[features].rolling(window_size).apply(lambda x: pd.Series.mode(x)[0])
+        df[[f + f"_median{window_size}" for f in features]] = df[features].rolling(window_size, center=center).median()
     if WindowOperationFlag.VAR & op == WindowOperationFlag.VAR:
-        df[[f + f"_var{window_size}" for f in features]] = df[features].rolling(window_size).var()
+        df[[f + f"_var{window_size}" for f in features]] = df[features].rolling(window_size, center=center).var()
 
     return df
 
