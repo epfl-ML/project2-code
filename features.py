@@ -8,15 +8,20 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-def load_features(file: str) -> pd.DataFrame:
+def load_features(folder: str, files: list[str]) -> pd.DataFrame:
     """
-    Load features from a csv file.
+    Load features from a list of csv files.
     Args:
         file: path to the dataset.
     Returns:
         data: numpy array of shape (N, D).
     """
-    return pd.read_csv(file, sep=',', header=0)
+    df = pd.DataFrame()
+    for file in files:
+        df1 = pd.read_csv(folder + file, sep=',', header=0)
+        df = pd.concat([df, df1], axis=0)
+        
+    return df
 
 
 class WindowOperationFlag(enum.IntFlag):
@@ -54,15 +59,15 @@ def features_window(
 
     # For each operation, add the computed aggregated value.
     if WindowOperationFlag.MEAN & op == WindowOperationFlag.MEAN:
-        df[[f + "_mean" for f in features]] = df[features].rolling(window_size).mean()
+        df[[f + f"_mean{window_size}" for f in features]] = df[features].rolling(window_size).mean()
     if WindowOperationFlag.MEDIAN & op == WindowOperationFlag.MEDIAN:
-        df[[f + "_median" for f in features]] = df[features].rolling(window_size).median()
+        df[[f + f"_median{window_size}" for f in features]] = df[features].rolling(window_size).median()
     if WindowOperationFlag.MODE & op == WindowOperationFlag.MODE:
         # TODO : This is particularly slow, since it requires to iterate over the whole window for each step.
         #        Moreover, it may not be particularly relevant for real-valued features. Should we remove it ?
-        df[[f + "_mode" for f in features]] = df[features].rolling(window_size).apply(lambda x: pd.Series.mode(x)[0])
+        df[[f + f"_mode{window_size}" for f in features]] = df[features].rolling(window_size).apply(lambda x: pd.Series.mode(x)[0])
     if WindowOperationFlag.VAR & op == WindowOperationFlag.VAR:
-        df[[f + "_var" for f in features]] = df[features].rolling(window_size).var()
+        df[[f + f"_var{window_size}" for f in features]] = df[features].rolling(window_size).var()
 
     return df
 
