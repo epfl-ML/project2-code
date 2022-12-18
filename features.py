@@ -9,20 +9,15 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, Normalizer
 
-def load_features(folder: str, files: list[str]) -> pd.DataFrame:
+def load_features(file: str) -> pd.DataFrame:
     """
-    Load features from a list of csv files.
+    Load features from a csv files.
     Args:
         file: path to the dataset.
     Returns:
         data: numpy array of shape (N, D).
     """
-    df = pd.DataFrame()
-    for file in files:
-        df1 = pd.read_csv(folder + file, sep=',', header=0)
-        df = pd.concat([df, df1], axis=0)
-        
-    return df
+    return pd.read_csv(file, sep=',', header=0)
 
 
 class WindowOperationFlag(enum.IntFlag):
