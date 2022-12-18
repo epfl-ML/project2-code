@@ -2,11 +2,12 @@ import enum
 import typing
 
 import pandas as pd
+import numpy as np
 import tensorflow as tf
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, Normalizer
 
 def load_features(folder: str, files: list[str]) -> pd.DataFrame:
     """
@@ -69,6 +70,21 @@ def features_window(
     if WindowOperationFlag.VAR & op == WindowOperationFlag.VAR:
         df[[f + f"_var{window_size}" for f in features]] = df[features].rolling(window_size).var()
 
+    return df
+
+def log_features(df, features=[]):
+    """
+    Take the log of the features.
+    Args:
+        df: the dataframe to transform
+
+    Returns:
+        df: the transformed dataframe
+    """
+    df = df.copy()
+    for col in df.columns:
+        if col in features:
+            df[f"{col}_log"] = np.log(df[col])
     return df
 
 def add_times(df) -> pd.DataFrame:
