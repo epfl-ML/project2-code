@@ -122,7 +122,7 @@ def expand_features_trigonometric(df, columns=None):
     return df
 
 
-def clean_data(df_raw, features, degree, expand_trig, max_invalid_ratio):
+def clean_data(df, degree, expand_trig, max_invalid_ratio, features=['EEGv', 'EMGv']):
     """
     Clean the data, removing invalid columns and changing invalid values remaining.
     Args:
@@ -131,10 +131,11 @@ def clean_data(df_raw, features, degree, expand_trig, max_invalid_ratio):
         expand_trig: whether to expand the trigonometric features or not
         ignored: list of features to ignore
         max_invalid_ratio: maximum ratio of invalid values in a column
+        features: list of features to expand
     Returns:
         the cleaned dataframe
     """
-    df = df_raw.copy()
+    df = df.copy()
 
     df = drop_invalid_features(df, max_invalid_ratio)
     df = log_features(df, features=features)
