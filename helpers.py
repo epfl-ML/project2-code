@@ -122,7 +122,7 @@ def expand_features_trigonometric(df, columns=None):
     return df
 
 
-def clean_data(df_raw, features, degree, expand_trig):
+def clean_data(df_raw, features, degree, expand_trig, max_invalid_ratio):
     """
     Clean the data, removing invalid columns and changing invalid values remaining.
     Args:
@@ -136,6 +136,7 @@ def clean_data(df_raw, features, degree, expand_trig):
     """
     df = df_raw.copy()
 
+    df = drop_invalid_features(df, max_invalid_ratio)
     df = log_features(df, features=features)
     df = standardize(df, features=features)
     df = expand_features_poly(
