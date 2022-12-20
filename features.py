@@ -11,6 +11,8 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, Normalizer
 
+from scipy import stats
+
 def load_features(file: str) -> pd.DataFrame:
     """
     Load features from a csv files.
@@ -271,4 +273,19 @@ def add_spectral_values(df):
         return row
 
     df.apply(add_spectral_values_per_row, axis=1)
+    return df
+
+
+def remove_outliers(df, features, z_threshold=3):
+    """
+        Remove outliers from dataframe
+        Args:
+            df: dataframe with features
+            features: list of features to remove outliers from
+            z_threshold: threshold for z-score
+        Returns:
+            df: dataframe without outliers
+    """
+    for feature in features:
+        df = df[(np.abs(stats.zscore(df[feature]) < z_threshold))]
     return df
