@@ -276,16 +276,19 @@ def add_spectral_values(df):
     return df
 
 
-def remove_outliers(df, features, z_threshold=3):
+def remove_outliers_quantile(df, my_features, threshold=0.95):
     """
         Remove outliers from dataframe
         Args:
             df: dataframe with features
             features: list of features to remove outliers from
-            z_threshold: threshold for z-score
+            threshold: threshold for quantile
         Returns:
             df: dataframe without outliers
     """
-    for feature in features:
-        df = df[(np.abs(stats.zscore(df[feature]) < z_threshold))]
+    alpha = 1 - threshold
+    for feature in my_features:
+        q_lower = df[feature].quantile(alpha / 2)
+        q_upper = df[feature].quantile(1 - alpha / 2)
+        df = df[(df[feature] > q_lower) & (df[feature] < q_upper)]
     return df
