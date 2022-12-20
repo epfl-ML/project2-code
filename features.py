@@ -4,6 +4,8 @@ import typing
 import pandas as pd
 import numpy as np
 import tensorflow as tf
+import librosa
+import antropy as ant
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
@@ -246,4 +248,27 @@ def clean_data(data_folder, data_files, days, window_sizes, window_features, dro
 
     # drop unwanted features
     df = df.drop([sdrop, "temp"], axis=1)
+    return df
+
+def add_spectral_values(df):
+    """
+        Add spectral features to dataframe
+        Args:
+            df: dataframe with bin columns
+        Returns:
+            df: dataframe with spectral features
+    """
+    bin_columns = [f"bin{i}" for i in range(401)]
+    if(not set(bin_columns).issubset(df.columns) ):
+        raise Exception("Dataframe does not contain bin columns")
+
+    def add_spectral_values_per_row(row):
+        y = np.fft.irfft(row[bin_columns].values)
+        row['spectral_flatness'] = librosa.feature.spectral_flatness(y=y, n_fft=401, hop_length=2*401, power=1.0, amin=1e-10)[0][0]
+        row['spectral_rolloff'] = librosa.feature.spectral_rolloff(y=y, sr=200, n_fft=401, hop_length=2*401)[0][0]
+        row['spectral_centroid'] = librosa.feature.spectral_centroid(y=y, sr=200, n_fft=401, hop_length=2*401)[0][0]
+        row['spectral_entropy'] = ant.spectral_entropy(y, sf=200, method='fft', normalize=True)
+        return row
+
+    df.apply(add_spectral_values_per_row, axis=1)
     return df
