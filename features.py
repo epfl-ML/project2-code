@@ -193,7 +193,7 @@ def encode_scale_data(df_train, df_test, useRaw, seed, cat_matrix):
 
     return x_train, x_test, y_train, y_test, le
 
-def clean_data(data_folder, data_files, days, window_sizes, window_features, dropBins, useRaw, balance=True, standardize_df=False, standardize_features=[]):
+def clean_data(data_folder, data_files, days, window_sizes, window_features, rolloffs, dropBins, useRaw, balance=True, standardize_df=False, standardize_features=[]):
     df = pd.DataFrame()
     # iterate over several files
     for file in data_files:
@@ -202,7 +202,13 @@ def clean_data(data_folder, data_files, days, window_sizes, window_features, dro
         # filter days
         df_temp = filter_days(df_temp, days)
 
-        # compute bins features
+        # add spectral features
+        for rolloff in rolloffs:
+            df_temp = spectral_rolloff(df_temp, p=rolloff)
+        df_temp = spectral_flatness(df_temp)
+        df_temp = spectral_centroid(df_temp)
+        df_temp = spectral_entropy(df_temp)
+
         # drop raw bins
         if dropBins:
             for i in range(401):
@@ -271,4 +277,56 @@ def add_spectral_values(df):
         return row
 
     df.apply(add_spectral_values_per_row, axis=1)
+    return df
+
+def spectral_flatness(dataframe):
+    df = dataframe.copy()
+    bins = [f"bin{i}" for i in range(401)]
+
+    # sum log of bins
+    sum_log = df[bins].apply(lambda x: np.log(x), axis=1).sum(axis=1)
+    # divide by number of bins
+    mean_log = sum_log / 401
+    # exponentiate
+    exp = mean_log.apply(lambda x: np.exp(x))
+    # divide by sum
+    res =  401 * (exp / df[bins].sum(axis=1))
+
+    df['spectral_flatness'] = res
+    return df
+
+def spectral_rolloff(dataframe, p):
+    df = dataframe.copy()
+
+    bins = [f"bin{i}" for i in range(401)]
+
+    df[f'spectral_rolloff_{p}'] = df[bins].apply(lambda x: np.argmax(x.cumsum() >= x.sum() * p) * 0.25, axis=1)
+    
+    return df
+
+def spectral_centroid(dataframe):
+    df = dataframe.copy()
+    bins = [f"bin{i}" for i in range(401)]
+
+    # weighted sum
+    weighted_sum = df[bins].apply(lambda x: np.sum(x * np.arange(401) * 0.25), axis=1)
+    sum = df[bins].sum(axis=1)
+    
+    df['spectral_centroid'] = weighted_sum / sum
+
+    return df
+
+def spectral_entropy(dataframe):
+    df = dataframe.copy()
+    bins = [f"bin{i}" for i in range(401)]
+
+    # normalize bins
+    df2 = df[bins].apply(lambda x: x / x.sum(), axis=1)
+    
+    def entropy(x):
+        return np.sum(x * np.log2(x))
+
+    # calculate entropy
+    df['spectral_entropy'] = df2.apply(lambda x: entropy(x), axis=1)
+
     return df
