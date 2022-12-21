@@ -449,8 +449,7 @@ def add_times(df) -> pd.DataFrame:
     df1["day"] = df1["time"] // 21600
     return df1
 
-
-def clean_data(data_folder, data_files, days, window_sizes, window_features, rolloffs, dropBins, useRaw, balance=True, standardize_df=False, standardize_features=[]):
+def clean_data(data_folder, data_files, days, window_sizes, window_features, rolloffs, spectral=True, dropBins=True, useRaw=False, balance=True, standardize_df=False, standardize_features=[]):
     """
     Load, clean, and standardize the data.
     It abstracts away the whole process of loading, cleaning, and standardizing the data.
@@ -461,6 +460,7 @@ def clean_data(data_folder, data_files, days, window_sizes, window_features, rol
         days: the days to keep
         window_sizes: the window sizes to use
         window_features: the features to use for the window
+        spectral: whether to use spectral features or not
         rolloffs: the rolloffs to use
         dropBins: whether to drop the raw bins or not
         useRaw: whether to use the rawState column or not
@@ -481,11 +481,12 @@ def clean_data(data_folder, data_files, days, window_sizes, window_features, rol
         df_temp = filter_days(df_temp, days)
 
         # add spectral features
-        for rolloff in rolloffs:
-            df_temp = spectral_rolloff(df_temp, p=rolloff)
-        df_temp = spectral_flatness(df_temp)
-        df_temp = spectral_centroid(df_temp)
-        df_temp = spectral_entropy(df_temp)
+        if spectral:
+            df_temp = spectral_flatness(df_temp)
+            df_temp = spectral_centroid(df_temp)
+            df_temp = spectral_entropy(df_temp)
+            for rolloff in rolloffs:
+                df_temp = spectral_rolloff(df_temp, p=rolloff)
 
         # drop raw bins
         if dropBins:

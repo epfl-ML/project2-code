@@ -72,7 +72,7 @@ def plot_confusion(model, x_test, y_test, le, cat_matrix, normalize='true'):
     print(classification_report(y_test, y_pred, target_names=le.classes_, zero_division=0))
 
     sns.heatmap(confusion, annot=True, cmap="Blues", fmt='.2f')
-    plt.title(f'Confusion matrix (normalize = {normalize}')
+    plt.title(f'Confusion matrix (normalize = {normalize})')
     plt.show()
 
 def confusion(model, x_test, y_test, le, cat_matrix, normalize='true'):
