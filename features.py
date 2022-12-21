@@ -493,9 +493,9 @@ def clean_data(data_folder, data_files, days, window_sizes, window_features, rol
                 df_temp = df_temp.drop([f"bin{i}"], axis=1)
 
         # add feature window
-        df_temp, window_names = add_mean_variance_feature_windows(df, window_sizes, window_features)
+        df_temp = add_mean_variance_feature_windows(df_temp, window_sizes, window_features)
 
-        df_temp = log_features(df_temp, window_names)
+        df_temp = log_features(df_temp, window_features)
         
         # add polynomial expansion
         # add trigonometric expansion ?
