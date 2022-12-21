@@ -496,8 +496,10 @@ def clean_data(data_folder, data_files, days, window_sizes, window_features, rol
         df_temp = add_mean_variance_feature_windows(df_temp, window_sizes, window_features)
 
         df_temp = log_features(df_temp, window_features)
+
+        # Add polynomial features
+        df = features.expand_features_poly(df, 3, ['EEGv', 'EMGv'])
         
-        # add polynomial expansion
         # add trigonometric expansion ?
 
         df = pd.concat([df, df_temp])
