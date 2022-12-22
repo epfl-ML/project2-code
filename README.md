@@ -46,6 +46,8 @@ Here's an overview of the code structure:
 │   │   ├── plots.py
 │   ├── archive                                 # Archive containing old and unused code
 │   │   ├──  a. Model exploration.ipynb
+│   ├── models                                 # Pre-trained neural network models
+│   │   ├── ...
 │   ├── 0. Data exploration.ipynb               # Data exploration
 │   ├── 1. Single individual experiment.ipynb   # First experiment
 │   ├── 2. Single mouse line experiment.ipynb   # Second experiment
