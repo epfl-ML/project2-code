@@ -23,7 +23,34 @@ def load_features(file: str) -> pd.DataFrame:
 
     return pd.read_csv(file, sep=',', header=0)
 
+def add_times(df) -> pd.DataFrame:
+    """
+    Add times to the dataframe.
+    Args:
+        df: numpy array of shape (N, D).
+    Returns:
+        data: numpy array of shape (N, D+2).
+    """
+    df1 = df.copy()
+    df1["time"] = df1.index
+    df1["day"] = df1["time"] // 21600
+    return df1
 
+def filter_days(df, days):
+    """
+    Filter the dataframe to keep only the days in the list.
+    Args:
+        df: the dataframe to filter
+        days: the list of days to keep
+    
+    Returns:
+        df: the filtered dataframe
+    """
+
+    df1 = df.copy()
+    df1["day"] = df1.index // 21600
+    return df[df1["day"].isin(days)]
+    
 class WindowOperationFlag(enum.IntFlag):
     """
     The different features that can be extracted from a window. If multiple features are selected,
@@ -160,21 +187,6 @@ def expand_features_poly(dataframe, max_degree, features=None):
 
     return df
 
-def filter_days(df, days):
-    """
-    Filter the dataframe to keep only the days in the list.
-    Args:
-        df: the dataframe to filter
-        days: the list of days to keep
-    
-    Returns:
-        df: the filtered dataframe
-    """
-
-    df1 = df.copy()
-    df1["day"] = df1.index // 21600
-    return df[df1["day"].isin(days)]
-
 def states(rawState):
     """
     Return the state and rawState columns depending on the rawState flag.
@@ -303,7 +315,7 @@ def split_encode_scale_data_kfold(df, useRaw, seed, cat_matrix):
 def encode_scale_data(df_train, df_test, useRaw, seed, cat_matrix):
     """
     Encode the labels, and scale the features.
-    Good for using different mice for train and test
+    Good for using different mice or different days for train and test
 
     Args:
         df_train: the training dataframe
@@ -333,7 +345,7 @@ def encode_scale_data(df_train, df_test, useRaw, seed, cat_matrix):
 
     return x_train, x_test, y_train, y_test, le
 
-def rebalance_labels(df, seed, label_column = "state"):
+def rebalance_labels(df, seed, label_column="state"):
     """
         Rebalance the labels in the dataframe
         Args:
@@ -451,19 +463,6 @@ def spectral_entropy(dataframe):
     df['spectral_entropy'] = df2.apply(lambda x: entropy(x), axis=1)
 
     return df
-
-def add_times(df) -> pd.DataFrame:
-    """
-    Add times to the dataframe.
-    Args:
-        df: numpy array of shape (N, D).
-    Returns:
-        data: numpy array of shape (N, D+2).
-    """
-    df1 = df.copy()
-    df1["time"] = df1.index
-    df1["day"] = df1["time"] // 21600
-    return df1
 
 def clean_data(data_folder, data_files, days, window_sizes, window_features, rolloffs, spectral=True, dropBins=True, useRaw=False, balance=True, standardize_df=False, standardize_features=[], seed=13):
     """

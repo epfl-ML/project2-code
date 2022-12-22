@@ -44,11 +44,12 @@ Here's an overview of the code structure:
 │   │   ├── features.py
 │   │   ├── models.py
 │   │   ├── plots.py
+│   ├── archive                                 # Archive containing old and unused code
+│   │   ├──  a. Model exploration.ipynb
 │   ├── 0. Data exploration.ipynb               # Data exploration
 │   ├── 1. Single individual experiment.ipynb   # First experiment
 │   ├── 2. Single mouse line experiment.ipynb   # Second experiment
 │   ├── 3. Cross-line experiment.ipynb          # Third experiment
-│   ├── a. Model exploration.ipynb
 ├── tools
 │   ├── README.md
 │   ├── data-extraction-kotlin                  # Main pre-processing script

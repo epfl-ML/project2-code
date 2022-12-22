@@ -1,6 +1,7 @@
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.metrics import make_scorer, accuracy_score, classification_report
 
+# Dictionnary of all the breed lines and their corresponding mice names
 mice_breeds = {
     "c57bl6" : [
     "BL601",

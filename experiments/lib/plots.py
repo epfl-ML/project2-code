@@ -7,6 +7,12 @@ import seaborn as sns
 from sklearn.metrics import classification_report, confusion_matrix
 
 def plot_history(history):
+    """
+    Plot the training and validation loss and accuracy
+    
+    Parameters
+    history : The history of the training        
+    """
     fig, axs = plt.subplots(1, 2, figsize=(15, 5))
     axs[0].plot(history['loss'])
     axs[0].plot(history['val_loss'])
@@ -24,6 +30,15 @@ def plot_history(history):
     axs[1].legend(['train', 'test'], loc='upper left')
 
 def plot_df(data, day, log=False, state="state"):
+    """
+    Plot the EEGv and EMGv of a given day
+
+    Parameters
+    data : The dataframe containing the data
+    day : The day to plot
+    log : If True, the y axis will be in log scale
+    state : The column containing the state of the mice
+    """
     df = data[data["day"] == day]
 
     fig, axs = plt.subplots(2, 1, figsize=(20, 10))
@@ -41,6 +56,13 @@ def plot_df(data, day, log=False, state="state"):
     plt.show()
 
 def scatter(data, state="state"):
+    """
+    Plot the scatterplot of the EEGv and EMGv of 4 days separately
+
+    Parameters
+    data : The dataframe containing the data
+    state : The column containing the state of the mice
+    """
     g = sns.FacetGrid(data, col="day", hue=state, col_wrap=2, height=6)
     g.map(sns.scatterplot, "EEGv", "EMGv", alpha=.50).add_legend()
     g.set(xscale="log", yscale="log")
@@ -48,6 +70,9 @@ def scatter(data, state="state"):
     plt.show()
 
 def density(df, state="state"):
+    """
+    Plot the density plot of the EEGv and EMGv of 4 days separately
+    """
     sns.set_theme(style="ticks")
     fig = plt.figure(dpi=600)
     g = sns.FacetGrid(df, col="day", hue=state, col_wrap=2, height=6)
@@ -56,6 +81,17 @@ def density(df, state="state"):
     plt.show()
 
 def plot_confusion(model, x_test, y_test, le, cat_matrix, normalize='true'):
+    """
+    Plot the confusion matrix of the model and print the classification report
+
+    Parameters
+    model : The model to evaluate
+    x_test : The test data
+    y_test : The test labels
+    le : The label encoder
+    cat_matrix : True if the confusion matrix is categorical, False otherwise
+    normalize : The normalization of the confusion matrix
+    """
     y_pred = model.predict(x_test)
 
     if cat_matrix:
@@ -76,6 +112,17 @@ def plot_confusion(model, x_test, y_test, le, cat_matrix, normalize='true'):
     plt.show()
 
 def confusion(model, x_test, y_test, le, cat_matrix, normalize='true'):
+    """
+    Return the confusion matrix of the model
+
+    Parameters
+    model : The model to evaluate
+    x_test : The test data
+    y_test : The test labels
+    le : The label encoder
+    cat_matrix : True if the confusion matrix is categorical, False otherwise
+    normalize : The normalization of the confusion matrix
+    """
     y_pred = model.predict(x_test)
 
     if cat_matrix:
