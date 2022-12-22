@@ -8,6 +8,8 @@ obtained using a random forest model, whereas our highest classification precisi
 
 ## Report
 
+The report is available [here](report.pdf).
+
 ## Code structure
 
 The project is structured as follows:
@@ -52,6 +54,7 @@ Here's an overview of the code structure:
 │   ├── data-extraction-kotlin                  # Main pre-processing script
 │   ├── data-extraction-python
 ├── main.ipynb
+├── report.pdf                                  # The project report
 ├── README.md
 ```
 
