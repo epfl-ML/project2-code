@@ -1,32 +1,6 @@
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.metrics import make_scorer, accuracy_score, classification_report
 
-def k_fold_cross_validation(X, y, model, k, seed):
-    """
-    Perform k-fold cross validation on the data.
-    Args:
-        X: features
-        y: labels
-        model: model to use
-        k: number of folds
-        seed: seed for the random generator
-    """
-
-    # Variables for average classification report
-    originalclass = []
-    predictedclass = []
-
-    # Make our customer score
-    def classification_report_with_accuracy_score(y_true, y_pred):
-        originalclass.extend(y_true)
-        predictedclass.extend(y_pred)
-        return accuracy_score(y_true, y_pred) # return accuracy score
-
-    cv = StratifiedKFold(n_splits=k, shuffle=True, random_state=seed)
-
-    nested_score = cross_val_score(model, X=X, y=y, cv=cv, scoring=make_scorer(classification_report_with_accuracy_score))
-    return classification_report(originalclass, predictedclass)
-
 mice_breeds = {
     "c57bl6" : [
     "BL601",
