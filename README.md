@@ -16,8 +16,9 @@ The project is structured as follows:
 
 - the `data/` folder contains information to obtain the dataset;
 - the `tools/` folder contains two scripts to preprocess the `.smo` files and export them as `.csv` files;
-- the `experiments/` folder contains the code used to train the models and run the experiments;
-- the `main.ipynb`
+- the `experiments/` folder contains the code used to train the models and run the experiments; and
+- **the `main.ipynb` file shows the different steps of feature engineering and model training, as described in
+  the report.**
 
 ### Dependencies and requirements
 
@@ -54,7 +55,7 @@ Here's an overview of the code structure:
 │   ├── README.md
 │   ├── data-extraction-kotlin                  # Main pre-processing script
 │   ├── data-extraction-python
-├── main.ipynb
+├── main.ipynb                                  # Feature engineering pipeline exploration
 ├── report.pdf                                  # The project report
 ├── README.md
 ```
