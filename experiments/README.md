@@ -10,3 +10,8 @@ exploratory analysis of the data.
   the training of the models over multiple individuals of the same line; and
 - [`3. Cross-line experiment.ipynb`](3.%20Cross-line%20experiment.ipynb) evaluates the performance of the models when
   training over multiple lines of mice.
+
+## Models
+
+Each experiment is provided with a pre-trained neural network model. **By default, running the notebooks will retrain the model, but not save it nor load it.**
+Therefore, you should uncomment the indicated lines cells if you wish to load the existing model.
