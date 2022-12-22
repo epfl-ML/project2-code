@@ -18,3 +18,6 @@ The following arguments are available:
 - `-sleep <true|default=false>` to override whether raw sleep features
   should be extracted
 - `-col <a,b,c>` to override the columns to extract (defaults to all)
+
+The shell script `extract_all.sh` can be used to apply the extraction script to the
+contents of a whole folder.
