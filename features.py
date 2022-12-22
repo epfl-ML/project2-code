@@ -33,6 +33,8 @@ class WindowOperationFlag(enum.IntFlag):
     MEAN = enum.auto()
     MEDIAN = enum.auto()
     VAR = enum.auto()
+    MIN = enum.auto()
+    MAX = enum.auto()
 
 
 def features_window(
@@ -57,7 +59,7 @@ def features_window(
     """
 
     if op == 0:
-        op = WindowOperationFlag.MEAN | WindowOperationFlag.MEDIAN | WindowOperationFlag.VAR
+        op = WindowOperationFlag.MEAN | WindowOperationFlag.MEDIAN | WindowOperationFlag.VAR | WindowOperationFlag.MIN | WindowOperationFlag.MAX
     if features is None:
         features = list(df.columns)
 
@@ -68,12 +70,16 @@ def features_window(
         df[[f + f"_median{window_size}" for f in features]] = df[features].rolling(window_size, center=center).median()
     if WindowOperationFlag.VAR & op == WindowOperationFlag.VAR:
         df[[f + f"_var{window_size}" for f in features]] = df[features].rolling(window_size, center=center).var()
+    if WindowOperationFlag.MIN & op == WindowOperationFlag.MIN:
+        df[[f + f"_min{window_size}" for f in features]] = df[features].rolling(window_size, center=center).min()
+    if WindowOperationFlag.MAX & op == WindowOperationFlag.MAX:
+        df[[f + f"_max{window_size}" for f in features]] = df[features].rolling(window_size, center=center).max()
 
     return df
 
-def add_mean_variance_feature_windows(df, window_sizes, window_features):
+def add_feature_windows(df, window_sizes, window_features):
     """
-    Add mean and variance rolling windows for each window size.
+    Add rolling windows for each window size.
     Args:
         df: the dataframe to transform
         window_sizes: the list of window sizes
@@ -86,10 +92,16 @@ def add_mean_variance_feature_windows(df, window_sizes, window_features):
     window_names = ['EEGv', 'EMGv']
     for window_size in window_sizes:
         df = features_window(df, window_size=window_size, op=WindowOperationFlag.MEAN, features=window_features)
+        df = features_window(df, window_size=window_size, op=WindowOperationFlag.MEDIAN, features=window_features)
         df = features_window(df, window_size=window_size, op=WindowOperationFlag.VAR, features=window_features)
+        df = features_window(df, window_size=window_size, op=WindowOperationFlag.MIN, features=window_features)
+        df = features_window(df, window_size=window_size, op=WindowOperationFlag.MAX, features=window_features)
         for feature in window_features:
             window_names.append(feature + "_mean" + str(window_size))
+            window_names.append(feature + "_median" + str(window_size))
             window_names.append(feature + "_var" + str(window_size))
+            window_names.append(feature + "_min" + str(window_size))
+            window_names.append(feature + "_max" + str(window_size))
 
     # drop nan from feature window
     df = df.dropna()
@@ -121,12 +133,12 @@ def log_features(df, features=[]):
         df1[f"{feature}_log"] = np.log(df1[feature])
     return df1
 
-def expand_features_poly(df, max_degree, features=None):
+def expand_features_poly(dataframe, max_degree, features=None):
     """
     Expand the dataframe by adding polynomial features.
 
     Args:
-        df: the dataframe to expand
+        dataframe: the dataframe to expand
         max_degree: maximum degree of the polynomial
         features: the list of features to expand
 
@@ -134,16 +146,18 @@ def expand_features_poly(df, max_degree, features=None):
         df: the expanded dataframe
     """
 
-    if features is None:
-        features = ['EEGv', 'EMGv']
-    df = df.copy()
-    for feature in df.columns:
-        if feature not in features:
-            continue
-        for degree in range(2, max_degree + 1):
-            df[f"{feature}^{degree}"] = df[feature] ** degree
+    df = dataframe.copy()
+
     # add bias
     df["bias"] = 1
+    
+    if features is None:
+        features = ['EEGv', 'EMGv']
+
+    for feature in features:
+        for degree in range(2, max_degree + 1):
+            df[f"{feature}^{degree}"] = df[feature] ** degree
+
     return df
 
 def filter_days(df, days):
@@ -319,7 +333,7 @@ def encode_scale_data(df_train, df_test, useRaw, seed, cat_matrix):
 
     return x_train, x_test, y_train, y_test, le
 
-def rebalance_labels(df, label_column = "state"):
+def rebalance_labels(df, seed, label_column = "state"):
     """
         Rebalance the labels in the dataframe
         Args:
@@ -330,10 +344,10 @@ def rebalance_labels(df, label_column = "state"):
     """
 
     balance = df[label_column].value_counts().min()
-    df = df.groupby(label_column).apply(lambda x: x.sample(balance)).reset_index(drop=True)
+    df = df.groupby(label_column).apply(lambda x: x.sample(balance, random_state=seed)).reset_index(drop=True)
     return df
 
-def remove_outliers_quantile(df, my_features, threshold=0.95):
+def remove_outliers_quantile(dataframe, my_features, threshold=0.99):
     """
     Remove outliers from dataframe
     Args:
@@ -343,12 +357,14 @@ def remove_outliers_quantile(df, my_features, threshold=0.95):
     Returns:
         df: dataframe without outliers
     """
+    df = dataframe.copy()
+
     alpha = 1 - threshold
     for feature in my_features:
         q_lower = df[feature].quantile(alpha / 2)
         q_upper = df[feature].quantile(1 - alpha / 2)
         df = df[(df[feature] > q_lower) & (df[feature] < q_upper)]
-    
+
     return df
 
 def spectral_flatness(dataframe):
@@ -449,7 +465,7 @@ def add_times(df) -> pd.DataFrame:
     df1["day"] = df1["time"] // 21600
     return df1
 
-def clean_data(data_folder, data_files, days, window_sizes, window_features, rolloffs, spectral=True, dropBins=True, useRaw=False, balance=True, standardize_df=False, standardize_features=[]):
+def clean_data(data_folder, data_files, days, window_sizes, window_features, rolloffs, spectral=True, dropBins=True, useRaw=False, balance=True, standardize_df=False, standardize_features=[], seed=13):
     """
     Load, clean, and standardize the data.
     It abstracts away the whole process of loading, cleaning, and standardizing the data.
@@ -494,21 +510,21 @@ def clean_data(data_folder, data_files, days, window_sizes, window_features, rol
                 df_temp = df_temp.drop([f"bin{i}"], axis=1)
 
         # add feature window
-        df_temp = add_mean_variance_feature_windows(df_temp, window_sizes, window_features)
+        df_temp = add_feature_windows(df_temp, window_sizes, window_features)
+
+        df_temp = remove_outliers_quantile(df_temp, ['EEGv', 'EMGv'], threshold=0.99)
 
         df_temp = log_features(df_temp, window_features)
 
         # Add polynomial features
-        df = features.expand_features_poly(df, 3, ['EEGv', 'EMGv'])
-        
-        # add trigonometric expansion ?
+        df_temp = expand_features_poly(df_temp, 3, ['EEGv', 'EMGv'])
 
         df = pd.concat([df, df_temp])
 
     # balance classes
     skeep, sdrop = states(useRaw)
     if balance:
-        df = rebalance_labels(df, skeep)
+        df = rebalance_labels(df, seed=seed, label_column=skeep)
 
     # drop unwanted features
     df = df.drop([sdrop, "temp"], axis=1)
