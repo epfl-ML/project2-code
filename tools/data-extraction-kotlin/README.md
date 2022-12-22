@@ -1,13 +1,13 @@
-# Data extraction
+# Instructions
 
-Using Gradle, you can run the following command to extract the data from the
+Using [Gradle](https://gradle.org), you can run the following command to extract the data from the
 database and generate the CSV files:
 
 ```shell
 ./gradlew run --args="../data/SMO_files/10101.smo out2.csv"
 ```
 
-The following arguments are possible:
+The following arguments are available:
 
 - `-i <path>` to override the input file (still requires to specify the
   input file as the first argument, which will then be ignored)
