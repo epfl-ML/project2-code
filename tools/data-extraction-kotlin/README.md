@@ -1,6 +1,6 @@
 # Instructions
 
-Using [Gradle](https://gradle.org), you can run the following command to extract the data from the
+Using [Gradle](https://gradle.org) (requires Java 17), you can run the following command to extract the data from the
 database and generate the CSV files:
 
 ```shell
